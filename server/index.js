@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import fs from "fs";
-import path from "path";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -71,19 +70,40 @@ const vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
   collectionName: "langchainjs-testing",
 });
 
-const retriever = vectorStore.asRetriever({ k: 3 });
+const retriever = vectorStore.asRetriever({ k: 4 });
+
+async function rewriteQuestion(question, history) {
+  const prompt = `
+You rewrite follow-up questions into standalone agriculture questions.
+
+Conversation:
+${history}
+
+Follow-up question:
+${question}
+
+Rewrite it as a complete standalone question.
+- Mention crop explicitly
+- Mention topic (fertilizer, pest, irrigation, etc)
+- Do NOT answer
+`;
+
+  const res = await a4fClient.chat.completions.create({
+    model: "provider-8/gemini-2.0-flash",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0,
+    max_tokens: 80,
+  });
+
+  return res.choices[0].message.content.trim();
+}
 
 app.post("/upload/pdf", upload.single("pdf"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "PDF file required" });
-    }
-
     await queue.add("file-ready", {
       filename: req.file.originalname,
       path: req.file.path,
     });
-
     res.json({ message: "PDF uploaded" });
   } catch {
     res.status(500).json({ error: "Upload failed" });
@@ -106,11 +126,26 @@ app.post("/chat", authMiddleware, async (req, res) => {
     chat.messages.push({ role: "user", content: message });
     await chat.save();
 
-    const docs = await retriever.invoke(message);
+    const history = chat.messages
+      .slice(-6)
+      .map((m) => `${m.role}: ${m.content}`)
+      .join("\n");
 
-    if (!docs || docs.length === 0) {
+    let retrievalQuery = message;
+
+    if (message.split(" ").length < 6) {
+      try {
+        retrievalQuery = await rewriteQuestion(message, history);
+      } catch {
+        retrievalQuery = message;
+      }
+    }
+
+    const docs = await retriever.invoke(retrievalQuery);
+
+    if (!docs.length) {
       const fallback = "I don't know based on the provided documents.";
-      chat.messages.push({ role: "assistant", content: fallback, sources: [] });
+      chat.messages.push({ role: "assistant", content: fallback });
       await chat.save();
       return res.json({ message: fallback, sources: [] });
     }
@@ -120,42 +155,28 @@ app.post("/chat", authMiddleware, async (req, res) => {
       .join("\n\n");
 
     const SYSTEM_PROMPT = `
-You are an expert Agriculture Assistant.
-
-Your domain is strictly agriculture:
-- Crops
-- Soil
-- Irrigation
-- Pests and diseases
-- Farming practices
-- Sustainable agriculture
-
-Rules:
-- Answer ONLY using the context below.
-- Do NOT use outside knowledge.
-- If the answer is not in the context, say:
-  "I don't know based on the provided documents."
-- Keep answers concise and farmer-friendly.
+You are an Agriculture Assistant.
+Answer ONLY from the context below.
+If not found, say:
+"I don't know based on the provided documents."
 
 Context:
 ${context}
 `;
 
-    let answer = "I don't know based on the provided documents.";
+    const aiRes = await a4fClient.chat.completions.create({
+      model: "provider-8/gemini-2.0-flash",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: message },
+      ],
+      temperature: 0.3,
+      max_tokens: 500,
+    });
 
-    try {
-      const aiRes = await a4fClient.chat.completions.create({
-        model: "provider-8/gemini-2.0-flash",
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: message },
-        ],
-        temperature: 0.3,
-        max_tokens: 500,
-      });
-
-      answer = aiRes?.choices?.[0]?.message?.content || answer;
-    } catch {}
+    const answer =
+      aiRes?.choices?.[0]?.message?.content ||
+      "I don't know based on the provided documents.";
 
     chat.messages.push({
       role: "assistant",
@@ -186,7 +207,6 @@ app.get("/chat/history/:chatId", authMiddleware, async (req, res) => {
       chatId: req.params.chatId,
       userId: req.user?.id,
     });
-
     res.json(chat || { messages: [] });
   } catch {
     res.status(500).json({ error: "History failed" });
