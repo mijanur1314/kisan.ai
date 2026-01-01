@@ -15,6 +15,12 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  Cloud,
+  CloudRain,
+  Wind,
+  Droplets,
+  Thermometer,
+  MapPin,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { authFetch } from "../utils/api";
@@ -26,11 +32,16 @@ export default function Chatbot() {
   const [chats, setChats] = useState({});
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : false
+  );
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [showSources, setShowSources] = useState({});
   const [darkMode, setDarkMode] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [showWeather, setShowWeather] = useState(false);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const skipHistoryFetchRef = useRef(null);
@@ -173,7 +184,7 @@ export default function Chatbot() {
         ],
       }));
       setCurrentChatId(id);
-      setSidebarOpen(false);
+      setSidebarOpen(window.innerWidth < 1024);
     } catch {
       alert("Failed to create new chat. Please try again.");
     }
@@ -343,6 +354,61 @@ export default function Chatbot() {
     }
   };
 
+  const fetchWeather = () => {
+    setWeatherLoading(true);
+    setShowWeather(true);
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      setWeatherLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=precipitation_sum,precipitation_probability_max&timezone=auto`
+          );
+          const data = await response.json();
+          const current = data.current;
+          const daily = data.daily;
+
+          // Map WMO codes to text
+          const getWeatherDesc = (code) => {
+            if (code === 0) return "Clear sky";
+            if (code >= 1 && code <= 3) return "Partly cloudy";
+            if (code >= 45 && code <= 48) return "Foggy";
+            if (code >= 51 && code <= 67) return "Rainy";
+            if (code >= 71 && code <= 77) return "Snowy";
+            if (code >= 80 && code <= 82) return "Showers";
+            if (code >= 95 && code <= 99) return "Thunderstorm";
+            return "Unknown";
+          };
+
+          setWeather({
+            temp: current.temperature_2m,
+            humidity: current.relative_humidity_2m,
+            wind: current.wind_speed_10m,
+            desc: getWeatherDesc(current.weather_code),
+            code: current.weather_code,
+            rainChance: daily.precipitation_probability_max[0],
+            rainSum: daily.precipitation_sum[0],
+          });
+        } catch (error) {
+          console.error("Error fetching weather:", error);
+          alert("Failed to fetch weather data.");
+        } finally {
+          setWeatherLoading(false);
+        }
+      },
+      () => {
+        alert("Unable to retrieve your location");
+        setWeatherLoading(false);
+      }
+    );
+  };
+
   const currentMessages = chats[currentChatId] || [];
 
   return (
@@ -368,99 +434,185 @@ export default function Chatbot() {
         />
       )}
 
+      {showWeather && (
+        <div
+          onClick={() => setShowWeather(false)}
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`${darkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"
+              } rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in fade-in zoom-in duration-200 border ${darkMode ? "border-gray-700" : "border-gray-100"
+              }`}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Cloud className="w-6 h-6 text-blue-500" /> Weather
+              </h3>
+              <button
+                onClick={() => setShowWeather(false)}
+                className={`p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {weatherLoading ? (
+              <div className="flex flex-col items-center py-8">
+                <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-sm opacity-70">Fetching local weather...</p>
+              </div>
+            ) : weather ? (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="text-5xl font-bold mb-2">{weather.temp}°C</div>
+                  <p className="text-lg font-medium text-blue-500">{weather.desc}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className={`p-4 rounded-xl ${darkMode ? "bg-gray-700/50" : "bg-blue-50"}`}>
+                    <div className="flex items-center gap-2 mb-1 opacity-70">
+                      <Droplets className="w-4 h-4" />
+                      <span className="text-xs font-semibold uppercase">Humidity</span>
+                    </div>
+                    <p className="text-xl font-bold">{weather.humidity}%</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${darkMode ? "bg-gray-700/50" : "bg-blue-50"}`}>
+                    <div className="flex items-center gap-2 mb-1 opacity-70">
+                      <Wind className="w-4 h-4" />
+                      <span className="text-xs font-semibold uppercase">Wind</span>
+                    </div>
+                    <p className="text-xl font-bold">{weather.wind} km/h</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${darkMode ? "bg-gray-700/50" : "bg-blue-50"}`}>
+                    <div className="flex items-center gap-2 mb-1 opacity-70">
+                      <CloudRain className="w-4 h-4" />
+                      <span className="text-xs font-semibold uppercase">Rain Chance</span>
+                    </div>
+                    <p className="text-xl font-bold">{weather.rainChance}%</p>
+                  </div>
+                  <div className={`p-4 rounded-xl ${darkMode ? "bg-gray-700/50" : "bg-blue-50"}`}>
+                    <div className="flex items-center gap-2 mb-1 opacity-70">
+                      <CloudRain className="w-4 h-4" />
+                      <span className="text-xs font-semibold uppercase">Rain Amt</span>
+                    </div>
+                    <p className="text-xl font-bold">{weather.rainSum} mm</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs opacity-50 justify-center">
+                  <MapPin className="w-3 h-3" />
+                  <span>Based on your current location</span>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 opacity-70">
+                Failed to load weather data
+              </div>
+            )}
+          </div>
+        </div>
+      )
+      }
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 ${darkMode ? "bg-gray-800/80" : "bg-white/80"
+        className={`fixed inset-y-0 left-0 z-50 ${darkMode ? "bg-gray-800/80" : "bg-white/80"
           } backdrop-blur-xl ${darkMode ? "border-gray-700" : "border-green-200"
           } border-r
-        flex flex-col shadow-2xl transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        lg:relative lg:translate-x-0 lg:flex`}
+        flex flex-col shadow-2xl transition-all duration-300 ease-in-out overflow-hidden
+        ${sidebarOpen
+            ? "translate-x-0 w-72"
+            : "-translate-x-full w-72 lg:w-0 lg:p-0 lg:border-r-0 lg:translate-x-0"
+          }
+        lg:relative`}
       >
-        <div className="p-5 border-b border-green-200 bg-gradient-to-r from-green-600 to-emerald-600">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-              <Leaf className="w-6 h-6" />
+        <div className="w-72 h-full flex flex-col">
+          <div className="p-5 border-b border-green-200 bg-gradient-to-r from-green-600 to-emerald-600">
+            <div className="flex items-center gap-3 text-white">
+              <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
+                <Leaf className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <h1 className="font-bold text-lg">KisanAi</h1>
+                <p className="text-xs text-white/80">Agriculture Assistant</p>
+              </div>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden hover:bg-white/20 p-2 rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <div className="flex-1">
-              <h1 className="font-bold text-lg">KisanAi</h1>
-              <p className="text-xs text-white/80">Agriculture Assistant</p>
-            </div>
+          </div>
+
+          <div className="p-4">
             <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden hover:bg-white/20 p-2 rounded-lg transition"
+              onClick={createNewChat}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl flex gap-2 items-center justify-center hover:shadow-lg transition font-medium"
             >
-              <X className="w-5 h-5" />
+              <Plus className="w-5 h-5" /> New Chat
             </button>
           </div>
-        </div>
 
-        <div className="p-4">
-          <button
-            onClick={createNewChat}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-xl flex gap-2 items-center justify-center hover:shadow-lg transition font-medium"
-          >
-            <Plus className="w-5 h-5" /> New Chat
-          </button>
-        </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-3">
-          <div className="space-y-2 py-2">
-            {chatHistory.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => {
-                  setCurrentChatId(c.id);
-                  setSidebarOpen(false);
-                }}
-                className={`group flex justify-between items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all ${c.id === currentChatId
-                  ? darkMode
-                    ? "bg-gradient-to-r from-gray-700 to-gray-600 shadow-md"
-                    : "bg-gradient-to-r from-green-100 to-emerald-100 shadow-md"
-                  : darkMode
-                    ? "hover:bg-gray-700/60"
-                    : "hover:bg-white/60"
-                  }`}
-              >
-                <div className="flex gap-3 items-center truncate flex-1 min-w-0">
-                  <MessageSquare
-                    className={`w-4 h-4 flex-shrink-0 ${c.id === currentChatId
-                      ? darkMode
-                        ? "text-green-400"
-                        : "text-green-700"
-                      : darkMode
-                        ? "text-green-400"
-                        : "text-green-600"
-                      }`}
-                  />
-                  <span
-                    className={`truncate text-sm ${darkMode ? "text-gray-200" : ""
-                      } ${c.id === currentChatId ? "font-medium" : ""}`}
-                  >
-                    {c.title}
-                  </span>
-                </div>
-                <button
-                  onClick={(e) => deleteChat(c.id, e)}
-                  className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition hover:bg-red-100 rounded-lg p-1.5"
-                  title="Delete chat"
+          <div className="flex-1 min-h-0 overflow-y-auto px-3">
+            <div className="space-y-2 py-2">
+              {chatHistory.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => {
+                    setCurrentChatId(c.id);
+                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                  }}
+                  className={`group flex justify-between items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all ${c.id === currentChatId
+                    ? darkMode
+                      ? "bg-gradient-to-r from-gray-700 to-gray-600 shadow-md"
+                      : "bg-gradient-to-r from-green-100 to-emerald-100 shadow-md"
+                    : darkMode
+                      ? "hover:bg-gray-700/60"
+                      : "hover:bg-white/60"
+                    }`}
                 >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
-              </div>
-            ))}
+                  <div className="flex gap-3 items-center truncate flex-1 min-w-0">
+                    <MessageSquare
+                      className={`w-4 h-4 flex-shrink-0 ${c.id === currentChatId
+                        ? darkMode
+                          ? "text-green-400"
+                          : "text-green-700"
+                        : darkMode
+                          ? "text-green-400"
+                          : "text-green-600"
+                        }`}
+                    />
+                    <span
+                      className={`truncate text-sm ${darkMode ? "text-gray-200" : ""
+                        } ${c.id === currentChatId ? "font-medium" : ""}`}
+                    >
+                      {c.title}
+                    </span>
+                  </div>
+                  <button
+                    onClick={(e) => deleteChat(c.id, e)}
+                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition hover:bg-red-100 rounded-lg p-1.5"
+                    title="Delete chat"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div
-          className={`p-4 border-t ${darkMode ? "border-gray-700" : "border-green-200"
-            }`}
-        >
-          <button
-            onClick={logout}
-            className="flex gap-2 items-center justify-center text-red-600 text-sm hover:text-red-700 transition font-medium w-full px-4 py-3 rounded-lg hover:bg-red-50 border border-red-200"
+          <div
+            className={`p-4 border-t ${darkMode ? "border-gray-700" : "border-green-200"
+              }`}
           >
-            <LogOut className="w-4 h-4" /> Logout
-          </button>
+            <button
+              onClick={logout}
+              className="flex gap-2 items-center justify-center text-red-600 text-sm hover:text-red-700 transition font-medium w-full px-4 py-3 rounded-lg hover:bg-red-50 border border-red-200"
+            >
+              <LogOut className="w-4 h-4" /> Logout
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -474,7 +626,7 @@ export default function Chatbot() {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={`${darkMode ? "hover:bg-gray-700" : "hover:bg-green-100"
-              } p-2 rounded-lg transition lg:hidden`}
+              } p-2 rounded-lg transition`}
           >
             <Menu
               className={`w-6 h-6 ${darkMode ? "text-green-400" : "text-green-700"
@@ -488,7 +640,18 @@ export default function Chatbot() {
             <Leaf className="w-6 h-6" />
             <span className="font-bold text-lg">KisanAi</span>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-4">
+            <button
+              onClick={fetchWeather}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition ${darkMode
+                ? "bg-gray-700 text-blue-400 hover:bg-gray-600"
+                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
+                }`}
+              title="Check Weather"
+            >
+              <Cloud className="w-4 h-4" />
+              <span className="text-sm font-medium hidden sm:inline">Weather</span>
+            </button>
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition ${darkMode
