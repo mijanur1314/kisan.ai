@@ -33,6 +33,7 @@ export default function Chatbot() {
   const [darkMode, setDarkMode] = useState(false);
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const skipHistoryFetchRef = useRef(null);
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
@@ -83,7 +84,7 @@ export default function Chatbot() {
           }))
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
@@ -95,6 +96,11 @@ export default function Chatbot() {
 
   useEffect(() => {
     if (!currentChatId) return;
+
+    if (skipHistoryFetchRef.current === currentChatId) {
+      skipHistoryFetchRef.current = null;
+      return;
+    }
 
     authFetch(`/chat/history/${currentChatId}`)
       .then((r) => {
@@ -109,15 +115,15 @@ export default function Chatbot() {
             d.messages?.length > 0
               ? d.messages
               : [
-                  {
-                    role: "assistant",
-                    content:
-                      "🌱 Hi! I'm your Agriculture Assistant. Ask me anything about farming, crops, soil, or irrigation.",
-                  },
-                ],
+                {
+                  role: "assistant",
+                  content:
+                    "🌱 Hi! I'm your Agriculture Assistant. Ask me anything about farming, crops, soil, or irrigation.",
+                },
+              ],
         }));
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [currentChatId]);
 
   useEffect(() => {
@@ -221,17 +227,7 @@ export default function Chatbot() {
 
         setChatHistory((p) => [{ id: chatId, title: msg }, ...p]);
 
-        setChats((p) => ({
-          ...p,
-          [chatId]: [
-            {
-              role: "assistant",
-              content:
-                "🌱 Hi! I'm your Agriculture Assistant. Ask me anything about farming, crops, soil, or irrigation.",
-            },
-          ],
-        }));
-
+        skipHistoryFetchRef.current = chatId;
         setCurrentChatId(chatId);
       } catch {
         alert("Failed to create chat. Please try again.");
@@ -328,7 +324,7 @@ export default function Chatbot() {
                   );
                 }
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }
       }
@@ -351,11 +347,10 @@ export default function Chatbot() {
 
   return (
     <div
-      className={`flex h-screen overflow-hidden ${
-        darkMode
+      className={`flex h-screen overflow-hidden ${darkMode
           ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
           : "bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50"
-      }`}
+        }`}
     >
       {sidebarOpen && (
         <div
@@ -365,11 +360,9 @@ export default function Chatbot() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 ${
-          darkMode ? "bg-gray-800/80" : "bg-white/80"
-        } backdrop-blur-xl ${
-          darkMode ? "border-gray-700" : "border-green-200"
-        } border-r
+        className={`fixed inset-y-0 left-0 z-50 w-72 ${darkMode ? "bg-gray-800/80" : "bg-white/80"
+          } backdrop-blur-xl ${darkMode ? "border-gray-700" : "border-green-200"
+          } border-r
         flex flex-col shadow-2xl transition-transform duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         lg:relative lg:translate-x-0 lg:flex`}
@@ -410,32 +403,29 @@ export default function Chatbot() {
                   setCurrentChatId(c.id);
                   setSidebarOpen(false);
                 }}
-                className={`group flex justify-between items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all ${
-                  c.id === currentChatId
+                className={`group flex justify-between items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all ${c.id === currentChatId
                     ? darkMode
                       ? "bg-gradient-to-r from-gray-700 to-gray-600 shadow-md"
                       : "bg-gradient-to-r from-green-100 to-emerald-100 shadow-md"
                     : darkMode
-                    ? "hover:bg-gray-700/60"
-                    : "hover:bg-white/60"
-                }`}
+                      ? "hover:bg-gray-700/60"
+                      : "hover:bg-white/60"
+                  }`}
               >
                 <div className="flex gap-3 items-center truncate flex-1 min-w-0">
                   <MessageSquare
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      c.id === currentChatId
+                    className={`w-4 h-4 flex-shrink-0 ${c.id === currentChatId
                         ? darkMode
                           ? "text-green-400"
                           : "text-green-700"
                         : darkMode
-                        ? "text-green-400"
-                        : "text-green-600"
-                    }`}
+                          ? "text-green-400"
+                          : "text-green-600"
+                      }`}
                   />
                   <span
-                    className={`truncate text-sm ${
-                      darkMode ? "text-gray-200" : ""
-                    } ${c.id === currentChatId ? "font-medium" : ""}`}
+                    className={`truncate text-sm ${darkMode ? "text-gray-200" : ""
+                      } ${c.id === currentChatId ? "font-medium" : ""}`}
                   >
                     {c.title}
                   </span>
@@ -453,9 +443,8 @@ export default function Chatbot() {
         </div>
 
         <div
-          className={`p-4 border-t ${
-            darkMode ? "border-gray-700" : "border-green-200"
-          }`}
+          className={`p-4 border-t ${darkMode ? "border-gray-700" : "border-green-200"
+            }`}
         >
           <button
             onClick={logout}
@@ -468,28 +457,24 @@ export default function Chatbot() {
 
       <main className="flex-1 flex flex-col min-w-0">
         <header
-          className={`${
-            darkMode
+          className={`${darkMode
               ? "bg-gray-800/80 border-gray-700"
               : "bg-white/80 border-green-200"
-          } backdrop-blur-xl border-b p-4 flex gap-3 items-center shadow-sm`}
+            } backdrop-blur-xl border-b p-4 flex gap-3 items-center shadow-sm`}
         >
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={`${
-              darkMode ? "hover:bg-gray-700" : "hover:bg-green-100"
-            } p-2 rounded-lg transition lg:hidden`}
+            className={`${darkMode ? "hover:bg-gray-700" : "hover:bg-green-100"
+              } p-2 rounded-lg transition lg:hidden`}
           >
             <Menu
-              className={`w-6 h-6 ${
-                darkMode ? "text-green-400" : "text-green-700"
-              }`}
+              className={`w-6 h-6 ${darkMode ? "text-green-400" : "text-green-700"
+                }`}
             />
           </button>
           <div
-            className={`flex items-center gap-2 ${
-              darkMode ? "text-green-400" : "text-green-700"
-            }`}
+            className={`flex items-center gap-2 ${darkMode ? "text-green-400" : "text-green-700"
+              }`}
           >
             <Leaf className="w-6 h-6" />
             <span className="font-bold text-lg">KisanAi</span>
@@ -497,11 +482,10 @@ export default function Chatbot() {
           <div className="ml-auto">
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition ${
-                darkMode
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition ${darkMode
                   ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
                   : "bg-green-50 text-green-600 hover:bg-green-100"
-              }`}
+                }`}
             >
               {darkMode ? (
                 <Sun className="w-4 h-4" />
@@ -520,16 +504,14 @@ export default function Chatbot() {
                   <Leaf className="w-10 h-10 text-white" />
                 </div>
                 <h2
-                  className={`text-2xl font-bold ${
-                    darkMode ? "text-gray-100" : "text-gray-800"
-                  } mb-3`}
+                  className={`text-2xl font-bold ${darkMode ? "text-gray-100" : "text-gray-800"
+                    } mb-3`}
                 >
                   Welcome to KisanAi
                 </h2>
                 <p
-                  className={`${
-                    darkMode ? "text-gray-300" : "text-gray-600"
-                  } mb-6`}
+                  className={`${darkMode ? "text-gray-300" : "text-gray-600"
+                    } mb-6`}
                 >
                   Your intelligent agriculture assistant. Ask me anything about
                   farming, crops, soil, irrigation, or pest management.
@@ -543,11 +525,10 @@ export default function Chatbot() {
                     <button
                       key={i}
                       onClick={() => setInput(q)}
-                      className={`text-sm text-left px-4 py-3 rounded-xl border transition ${
-                        darkMode
+                      className={`text-sm text-left px-4 py-3 rounded-xl border transition ${darkMode
                           ? "bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-200 hover:border-green-500"
                           : "bg-white hover:bg-green-50 border-green-200 text-gray-700 hover:border-green-400"
-                      }`}
+                        }`}
                     >
                       {q}
                     </button>
@@ -569,17 +550,15 @@ export default function Chatbot() {
               )}
               <div className="flex flex-col gap-2 max-w-xl sm:max-w-2xl">
                 <div
-                  className={`px-5 py-4 rounded-2xl ${
-                    m.role === "user"
+                  className={`px-5 py-4 rounded-2xl ${m.role === "user"
                       ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
                       : darkMode
-                      ? "bg-gray-800 border border-gray-700 shadow-md text-gray-100"
-                      : "bg-white border border-green-200 shadow-md"
-                  } ${
-                    m.role === "assistant" && !m.content && isLoading
+                        ? "bg-gray-800 border border-gray-700 shadow-md text-gray-100"
+                        : "bg-white border border-green-200 shadow-md"
+                    } ${m.role === "assistant" && !m.content && isLoading
                       ? "thinking-bubble"
                       : ""
-                  }`}
+                    }`}
                 >
                   {m.role === "assistant" && !m.content && isLoading ? (
                     <div className="flex gap-1.5 py-2">
@@ -635,9 +614,8 @@ export default function Chatbot() {
                       >
                         <span>{m.sources.length} sources</span>
                         <ChevronDown
-                          className={`w-3 h-3 transition ${
-                            showSources[i] ? "rotate-180" : ""
-                          }`}
+                          className={`w-3 h-3 transition ${showSources[i] ? "rotate-180" : ""
+                            }`}
                         />
                       </button>
                       {showSources[i] && (
@@ -645,16 +623,14 @@ export default function Chatbot() {
                           {m.sources.map((s, idx) => (
                             <div
                               key={idx}
-                              className={`text-xs rounded-lg p-3 ${
-                                darkMode
+                              className={`text-xs rounded-lg p-3 ${darkMode
                                   ? "bg-gray-800 border border-gray-700"
                                   : "bg-green-50 border border-green-200"
-                              }`}
+                                }`}
                             >
                               <p
-                                className={`${
-                                  darkMode ? "text-gray-300" : "text-gray-700"
-                                } line-clamp-2`}
+                                className={`${darkMode ? "text-gray-300" : "text-gray-700"
+                                  } line-clamp-2`}
                               >
                                 {s.preview}...
                               </p>
@@ -677,11 +653,10 @@ export default function Chatbot() {
         </div>
 
         <footer
-          className={`border-t ${
-            darkMode
+          className={`border-t ${darkMode
               ? "border-gray-700 bg-gray-800/80"
               : "border-green-200 bg-white/80"
-          } backdrop-blur-xl p-4 shadow-lg`}
+            } backdrop-blur-xl p-4 shadow-lg`}
         >
           <div className="max-w-4xl mx-auto">
             {isListening && (
@@ -692,9 +667,8 @@ export default function Chatbot() {
                       key={i}
                       className="w-1 bg-red-600 rounded-full h-4"
                       style={{
-                        animation: `pulse 0.8s ease-in-out infinite ${
-                          i * 0.1
-                        }s`,
+                        animation: `pulse 0.8s ease-in-out infinite ${i * 0.1
+                          }s`,
                       }}
                     />
                   ))}
@@ -712,23 +686,21 @@ export default function Chatbot() {
                   e.key === "Enter" && !e.shiftKey && handleSubmit()
                 }
                 placeholder="Ask about crops, soil, irrigation..."
-                className={`flex-1 border-2 rounded-2xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm ${
-                  darkMode
+                className={`flex-1 border-2 rounded-2xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm ${darkMode
                     ? "bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
                     : "bg-white border-green-200"
-                }`}
+                  }`}
                 disabled={isListening}
               />
 
               <button
                 onClick={toggleVoiceInput}
-                className={`px-5 rounded-2xl transition shadow-lg font-medium ${
-                  isListening
+                className={`px-5 rounded-2xl transition shadow-lg font-medium ${isListening
                     ? "bg-red-600 text-white"
                     : darkMode
-                    ? "bg-gray-700 border-2 border-gray-600 text-green-400 hover:bg-gray-600"
-                    : "bg-white border-2 border-green-200 text-green-600 hover:bg-green-50"
-                }`}
+                      ? "bg-gray-700 border-2 border-gray-600 text-green-400 hover:bg-gray-600"
+                      : "bg-white border-2 border-green-200 text-green-600 hover:bg-green-50"
+                  }`}
                 title={isListening ? "Stop listening" : "Start voice search"}
               >
                 {isListening ? (
@@ -747,9 +719,8 @@ export default function Chatbot() {
               </button>
             </div>
             <p
-              className={`text-xs text-center ${
-                darkMode ? "text-gray-400" : "text-gray-500"
-              } mt-3`}
+              className={`text-xs text-center ${darkMode ? "text-gray-400" : "text-gray-500"
+                } mt-3`}
             >
               AI can make mistakes. Verify important information.
             </p>
