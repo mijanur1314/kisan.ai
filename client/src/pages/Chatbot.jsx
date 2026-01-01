@@ -347,11 +347,20 @@ export default function Chatbot() {
 
   return (
     <div
-      className={`flex h-screen overflow-hidden ${darkMode
-          ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
-          : "bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50"
+      className={`flex h-screen overflow-hidden relative ${darkMode
+        ? "bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"
+        : "bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50"
         }`}
     >
+      <div
+        className={`absolute inset-0 z-0 pointer-events-none ${darkMode ? "opacity-10" : "opacity-30"
+          }`}
+        style={{
+          backgroundImage: "url(/bg-agriculture.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center"
+        }}
+      />
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -404,23 +413,23 @@ export default function Chatbot() {
                   setSidebarOpen(false);
                 }}
                 className={`group flex justify-between items-center gap-2 px-4 py-3 rounded-xl cursor-pointer transition-all ${c.id === currentChatId
-                    ? darkMode
-                      ? "bg-gradient-to-r from-gray-700 to-gray-600 shadow-md"
-                      : "bg-gradient-to-r from-green-100 to-emerald-100 shadow-md"
-                    : darkMode
-                      ? "hover:bg-gray-700/60"
-                      : "hover:bg-white/60"
+                  ? darkMode
+                    ? "bg-gradient-to-r from-gray-700 to-gray-600 shadow-md"
+                    : "bg-gradient-to-r from-green-100 to-emerald-100 shadow-md"
+                  : darkMode
+                    ? "hover:bg-gray-700/60"
+                    : "hover:bg-white/60"
                   }`}
               >
                 <div className="flex gap-3 items-center truncate flex-1 min-w-0">
                   <MessageSquare
                     className={`w-4 h-4 flex-shrink-0 ${c.id === currentChatId
-                        ? darkMode
-                          ? "text-green-400"
-                          : "text-green-700"
-                        : darkMode
-                          ? "text-green-400"
-                          : "text-green-600"
+                      ? darkMode
+                        ? "text-green-400"
+                        : "text-green-700"
+                      : darkMode
+                        ? "text-green-400"
+                        : "text-green-600"
                       }`}
                   />
                   <span
@@ -455,11 +464,11 @@ export default function Chatbot() {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 relative z-10">
         <header
           className={`${darkMode
-              ? "bg-gray-800/80 border-gray-700"
-              : "bg-white/80 border-green-200"
+            ? "bg-gray-800/80 border-gray-700"
+            : "bg-white/80 border-green-200"
             } backdrop-blur-xl border-b p-4 flex gap-3 items-center shadow-sm`}
         >
           <button
@@ -483,8 +492,8 @@ export default function Chatbot() {
             <button
               onClick={() => setDarkMode(!darkMode)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition ${darkMode
-                  ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
-                  : "bg-green-50 text-green-600 hover:bg-green-100"
+                ? "bg-gray-700 text-yellow-400 hover:bg-gray-600"
+                : "bg-green-50 text-green-600 hover:bg-green-100"
                 }`}
             >
               {darkMode ? (
@@ -526,8 +535,8 @@ export default function Chatbot() {
                       key={i}
                       onClick={() => setInput(q)}
                       className={`text-sm text-left px-4 py-3 rounded-xl border transition ${darkMode
-                          ? "bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-200 hover:border-green-500"
-                          : "bg-white hover:bg-green-50 border-green-200 text-gray-700 hover:border-green-400"
+                        ? "bg-gray-800 hover:bg-gray-700 border-gray-700 text-gray-200 hover:border-green-500"
+                        : "bg-white hover:bg-green-50 border-green-200 text-gray-700 hover:border-green-400"
                         }`}
                     >
                       {q}
@@ -551,10 +560,10 @@ export default function Chatbot() {
               <div className="flex flex-col gap-2 max-w-xl sm:max-w-2xl">
                 <div
                   className={`px-5 py-4 rounded-2xl ${m.role === "user"
-                      ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
-                      : darkMode
-                        ? "bg-gray-800 border border-gray-700 shadow-md text-gray-100"
-                        : "bg-white border border-green-200 shadow-md"
+                    ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg"
+                    : darkMode
+                      ? "bg-gray-800 border border-gray-700 shadow-md text-gray-100"
+                      : "bg-white border border-green-200 shadow-md"
                     } ${m.role === "assistant" && !m.content && isLoading
                       ? "thinking-bubble"
                       : ""
@@ -624,8 +633,8 @@ export default function Chatbot() {
                             <div
                               key={idx}
                               className={`text-xs rounded-lg p-3 ${darkMode
-                                  ? "bg-gray-800 border border-gray-700"
-                                  : "bg-green-50 border border-green-200"
+                                ? "bg-gray-800 border border-gray-700"
+                                : "bg-green-50 border border-green-200"
                                 }`}
                             >
                               <p
@@ -654,8 +663,8 @@ export default function Chatbot() {
 
         <footer
           className={`border-t ${darkMode
-              ? "border-gray-700 bg-gray-800/80"
-              : "border-green-200 bg-white/80"
+            ? "border-gray-700 bg-gray-800/80"
+            : "border-green-200 bg-white/80"
             } backdrop-blur-xl p-4 shadow-lg`}
         >
           <div className="max-w-4xl mx-auto">
@@ -687,8 +696,8 @@ export default function Chatbot() {
                 }
                 placeholder="Ask about crops, soil, irrigation..."
                 className={`flex-1 border-2 rounded-2xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow-sm ${darkMode
-                    ? "bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
-                    : "bg-white border-green-200"
+                  ? "bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400"
+                  : "bg-white border-green-200"
                   }`}
                 disabled={isListening}
               />
@@ -696,10 +705,10 @@ export default function Chatbot() {
               <button
                 onClick={toggleVoiceInput}
                 className={`px-5 rounded-2xl transition shadow-lg font-medium ${isListening
-                    ? "bg-red-600 text-white"
-                    : darkMode
-                      ? "bg-gray-700 border-2 border-gray-600 text-green-400 hover:bg-gray-600"
-                      : "bg-white border-2 border-green-200 text-green-600 hover:bg-green-50"
+                  ? "bg-red-600 text-white"
+                  : darkMode
+                    ? "bg-gray-700 border-2 border-gray-600 text-green-400 hover:bg-gray-600"
+                    : "bg-white border-2 border-green-200 text-green-600 hover:bg-green-50"
                   }`}
                 title={isListening ? "Stop listening" : "Start voice search"}
               >
