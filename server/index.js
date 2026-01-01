@@ -211,7 +211,7 @@ app.post("/chat", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Invalid request" });
     }
 
-    const chat = await Chat.findOne({ chatId, userId });
+    let chat = await Chat.findOne({ chatId, userId });
     if (!chat) {
       return res.status(404).json({ error: "Chat not found" });
     }
@@ -245,14 +245,31 @@ app.post("/chat", authMiddleware, async (req, res) => {
       const fallback = "I don't know based on the provided documents.";
       chat.messages.push({ role: "assistant", content: fallback });
       await chat.save();
-      return res.json({ message: fallback, title: chat.title, sources: [] });
+
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+
+      res.write(`data: ${JSON.stringify({ content: fallback })}\n\n`);
+      res.write(
+        `data: ${JSON.stringify({
+          sources: [],
+          title: chat.title,
+          done: true,
+        })}\n\n`
+      );
+      return res.end();
     }
 
     const context = docs
       .map((d, i) => `Source ${i + 1}:\n${d.pageContent}`)
       .join("\n\n");
 
-    const aiRes = await a4fClient.chat.completions.create({
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    const stream = await a4fClient.chat.completions.create({
       model: "provider-8/gemini-2.0-flash",
       messages: [
         {
@@ -269,11 +286,18 @@ ${context}`,
       ],
       temperature: 0.3,
       max_tokens: 500,
+      stream: true,
     });
 
-    const answer =
-      aiRes?.choices?.[0]?.message?.content ||
-      "I don't know based on the provided documents.";
+    let fullAnswer = "";
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        fullAnswer += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
 
     const sources = docs.map((d) => ({
       preview: d.pageContent.slice(0, 200),
@@ -282,13 +306,16 @@ ${context}`,
 
     chat.messages.push({
       role: "assistant",
-      content: answer,
+      content: fullAnswer || "I don't know based on the provided documents.",
       sources,
     });
 
     await chat.save();
 
-    res.json({ message: answer, title: chat.title, sources });
+    res.write(
+      `data: ${JSON.stringify({ sources, title: chat.title, done: true })}\n\n`
+    );
+    res.end();
   } catch {
     res.status(500).json({ error: "Chat failed" });
   }

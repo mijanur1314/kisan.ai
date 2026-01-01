@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   Send,
   Leaf,
-  Loader2,
   Plus,
   MessageSquare,
   Menu,
@@ -245,6 +244,18 @@ export default function Chatbot() {
       [chatId]: [...(p[chatId] || []), { role: "user", content: msg }],
     }));
 
+    setChats((p) => ({
+      ...p,
+      [chatId]: [
+        ...(p[chatId] || []),
+        {
+          role: "assistant",
+          content: "",
+          sources: [],
+        },
+      ],
+    }));
+
     setIsLoading(true);
 
     try {
@@ -258,36 +269,79 @@ export default function Chatbot() {
         throw new Error("Failed to send message");
       }
 
-      const data = await res.json();
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = "";
+      let sources = [];
+      let title = "";
 
-      setChats((p) => ({
-        ...p,
-        [chatId]: [
-          ...(p[chatId] || []),
-          {
-            role: "assistant",
-            content: data.message,
-            sources: data.sources || [],
-          },
-        ],
-      }));
+      while (true) {
+        const { done, value } = await reader.read();
 
-      if (data.title) {
-        setChatHistory((p) =>
-          p.map((c) => (c.id === chatId ? { ...c, title: data.title } : c))
-        );
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.content) {
+                accumulatedContent += data.content;
+                await new Promise((resolve) => setTimeout(resolve, 30));
+
+                setChats((p) => {
+                  const messages = [...(p[chatId] || [])];
+                  const lastIndex = messages.length - 1;
+                  messages[lastIndex] = {
+                    ...messages[lastIndex],
+                    content: accumulatedContent,
+                  };
+                  return { ...p, [chatId]: messages };
+                });
+              }
+
+              if (data.sources) {
+                sources = data.sources;
+              }
+
+              if (data.title) {
+                title = data.title;
+              }
+
+              if (data.done) {
+                setChats((p) => {
+                  const messages = [...(p[chatId] || [])];
+                  const lastIndex = messages.length - 1;
+                  messages[lastIndex] = {
+                    ...messages[lastIndex],
+                    sources: sources,
+                  };
+                  return { ...p, [chatId]: messages };
+                });
+
+                if (title) {
+                  setChatHistory((p) =>
+                    p.map((c) => (c.id === chatId ? { ...c, title: title } : c))
+                  );
+                }
+              }
+            } catch (e) {}
+          }
+        }
       }
     } catch {
-      setChats((p) => ({
-        ...p,
-        [chatId]: [
-          ...(p[chatId] || []),
-          {
-            role: "assistant",
-            content: "Sorry, I encountered an error. Please try again.",
-          },
-        ],
-      }));
+      setChats((p) => {
+        const messages = [...(p[chatId] || [])];
+        const lastIndex = messages.length - 1;
+        messages[lastIndex] = {
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+        };
+        return { ...p, [chatId]: messages };
+      });
     } finally {
       setIsLoading(false);
     }
@@ -521,32 +575,53 @@ export default function Chatbot() {
                       : darkMode
                       ? "bg-gray-800 border border-gray-700 shadow-md text-gray-100"
                       : "bg-white border border-green-200 shadow-md"
+                  } ${
+                    m.role === "assistant" && !m.content && isLoading
+                      ? "thinking-bubble"
+                      : ""
                   }`}
                 >
-                  <ReactMarkdown
-                    components={{
-                      p: ({ node, ...props }) => (
-                        <p className="my-2" {...props} />
-                      ),
-                      ul: ({ node, ...props }) => (
-                        <ul className="my-2 pl-6 list-disc" {...props} />
-                      ),
-                      ol: ({ node, ...props }) => (
-                        <ol className="my-2 pl-6 list-decimal" {...props} />
-                      ),
-                      li: ({ node, ...props }) => (
-                        <li className="my-1" {...props} />
-                      ),
-                      strong: ({ node, ...props }) => (
-                        <strong className="font-semibold" {...props} />
-                      ),
-                      em: ({ node, ...props }) => (
-                        <em className="italic" {...props} />
-                      ),
-                    }}
-                  >
-                    {m.content}
-                  </ReactMarkdown>
+                  {m.role === "assistant" && !m.content && isLoading ? (
+                    <div className="flex gap-1.5 py-2">
+                      <div
+                        className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-green-600 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
+                    </div>
+                  ) : (
+                    <ReactMarkdown
+                      components={{
+                        p: ({ node, ...props }) => (
+                          <p className="my-2" {...props} />
+                        ),
+                        ul: ({ node, ...props }) => (
+                          <ul className="my-2 pl-6 list-disc" {...props} />
+                        ),
+                        ol: ({ node, ...props }) => (
+                          <ol className="my-2 pl-6 list-decimal" {...props} />
+                        ),
+                        li: ({ node, ...props }) => (
+                          <li className="my-1" {...props} />
+                        ),
+                        strong: ({ node, ...props }) => (
+                          <strong className="font-semibold" {...props} />
+                        ),
+                        em: ({ node, ...props }) => (
+                          <em className="italic" {...props} />
+                        ),
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
                 {m.role === "assistant" &&
                   m.sources &&
@@ -597,25 +672,6 @@ export default function Chatbot() {
               )}
             </div>
           ))}
-          {isLoading && (
-            <div className="flex gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex justify-center items-center flex-shrink-0 shadow-lg">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <div
-                className={`rounded-2xl px-5 py-4 shadow-md ${
-                  darkMode
-                    ? "bg-gray-800 border border-gray-700"
-                    : "bg-white border border-green-200"
-                }`}
-              >
-                <div className="flex gap-2 items-center text-green-600">
-                  <Loader2 className="animate-spin w-5 h-5" />
-                  <span className="text-sm">Analyzing your question...</span>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div ref={messagesEndRef} />
         </div>
