@@ -126,7 +126,7 @@ Rewrite it as a complete standalone question.
 `;
 
   const res = await a4fClient.chat.completions.create({
-    model: "provider-6/llama-3.1-8b-instant",
+    model: "provider-5/gemma-3-27b-it-fast",
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
     max_tokens: 80,

@@ -1,114 +1,194 @@
-🌾 **KisanAI** — Agriculture Intelligence Platform (RAG)
+# 🌾 KisanAI — Agriculture Intelligence Platform (RAG)
 
-**KisanAI** is an open-source AI-powered agriculture assistance platform built using Retrieval-Augmented Generation (RAG).
-It provides accurate, document-grounded answers for questions related to soil, crops, irrigation, pests, and farming practices, based strictly on uploaded agricultural documents.
+**KisanAI** is a comprehensive, open-source AI-powered agriculture assistance platform built using Retrieval-Augmented Generation (RAG). It empowers farmers with accurate, document-grounded answers to their questions about soil, crops, irrigation, pests, and farming practices, strictly based on verified agricultural methods.
 
-The platform supports text and voice-based queries, context-aware multi-turn conversations, and robust conversation management with persistent storage.
+The platform combines advanced LLMs for text-based queries with vision-language models for disease detection, offering a complete digital companion for modern farming.
 
-✨ **Key Features**
+---
 
-- Agriculture-focused conversational assistant
+## ✨ Key Features
 
-- PDF-based document ingestion and knowledge grounding
+### 🤖 **Intelligent Agricultural Assistant (RAG)**
+-   **Document Grounding**: Ingests agricultural PDFs to provide answers strictly based on authoritative sources, reducing hallucinations.
+-   **Semantic Search**: Uses **Qdrant** and **HuggingFace** embeddings to find the most relevant context for every query.
+-   **Multi-Turn Conversations**: Remembers context from previous messages to handle follow-up questions naturally.
+-   **Query Rewriting**: Automatically refines vague follow-up questions (e.g., "How much water does it need?") into standalone queries (e.g., "How much water does wheat need?") for better retrieval.
 
-- Retrieval-Augmented Generation (RAG) architecture
+### 🍃 **Pest & Disease Detection**
+-   **Visual Diagnosis**: Farmers can upload photos of crops to instantly identify diseases.
+-   **AI Analysis**: Powered by **Qwen 2.5 VL** (Vision-Language Model), it detects issues with high accuracy.
+-   **Actionable Advice**: Provides detailed severity assessments, treatment recommendations, and prevention measures.
+-   **Multilingual Output**: Disease reports are automatically translated into the user's preferred language.
 
-- Semantic search using vector embeddings
+### 🌐 **Multilingual Support**
+-   **Real-Time Translation**: Seamlessly translates queries and responses between English and Indian languages using **LibreTranslate**.
+-   **Supported Languages**: Hindi, Bengali, Tamil, Telugu, Marathi, Kannada, Malayalam, Gujarati, Punjabi, and Urdu.
+-   **Voice Input**: Supports speech-to-text for accessible interaction in native languages.
 
-- Context-aware multi-turn conversations
+### 🔐 **Secure & Robust Architecture**
+-   **Authentication**: Secure JWT-based login for Users and Admins.
+-   **Chat Management**:
+    -   Persistent chat history stored in **MongoDB**.
+    -   Separate history tracking for General Chat and Disease Detection.
+    -   Ability to rename and delete conversations.
+-   **Admin Dashboard**: secure capabilities for authorized personnel to upload and manage reference documents (PDFs).
 
-- Voice-based query input (speech-to-text)
+---
 
-- Automatic conversation titles derived from the first user query
+## 🧩 Architecture & Workflows
 
-- Persistent chat history with conversation listing
+### System Architecture
 
-- Reliable chat deletion with consistent backend state
+```mermaid
+graph TD
+    Client[Client (React + Vite)] <-->|REST API| Server[Server (Node + Express)]
+    
+    subgraph Data Layer
+        Server <-->|Store History| Mongo[(MongoDB)]
+        Server <-->|Vector Search| Qdrant[(Qdrant Vector DB)]
+        Server <-->|Job Queue| Redis[(Redis)]
+    end
+    
+    subgraph AI Services
+        Server <-->|LLM & Vision| A4F[A4F / HuggingFace]
+        Server <-->|Embeddings| HF_Embed[HuggingFace Embeddings]
+        Server <-->|Translation| Libre[LibreTranslate]
+    end
+```
 
-- Responsive, mobile-friendly user interface
+### 🔄 RAG Chat Workflow
 
-- Secure authentication and protected APIs
+```mermaid
+sequenceDiagram
+    participant User
+    participant Server
+    participant Translator
+    participant VectorDB
+    participant LLM
+    
+    User->>Server: Send Message (Any Language)
+    Server->>Translator: Translate to English
+    Translator-->>Server: English Query
+    Server->>LLM: Rewrite as Standalone Query
+    LLM-->>Server: Optimized Query
+    Server->>VectorDB: Search Relevant Documents
+    VectorDB-->>Server: Retreived Context
+    Server->>LLM: Generate Answer (with Context)
+    LLM-->>Server: English Response
+    Server->>Translator: Translate to User Language
+    Translator-->>Server: Localized Response
+    Server-->>User: Final Answer
+```
 
-🏗️ **Tech Stack**
+### 🍃 Disease Detection Flow
 
-**Frontend**
+```mermaid
+sequenceDiagram
+    participant Farmer
+    participant Server
+    participant Vision as Vision Model (Qwen 2.5)
+    
+    Farmer->>Server: Upload Crop Image
+    Server->>Vision: Analyze Image + Prompt
+    Vision-->>Server: Disease Diagnosis
+    Server-->>Farmer: Diagnosis & Treatment (Translated)
+```
 
-- React
+---
 
-- Tailwind CSS
+## 🏗️ Tech Stack
 
-- Web Speech API (Voice Input)
+### **Frontend**
+-   **Framework**: [React](https://react.dev/) (Vite)
+-   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+-   **Animations**: [Framer Motion](https://www.framer.com/motion/)
+-   **Icons**: [Lucide React](https://lucide.dev/)
+-   **State & Routing**: React Router DOM
 
-**Backend**
+### **Backend**
+-   **Runtime**: [Node.js](https://nodejs.org/)
+-   **Framework**: [Express.js](https://expressjs.com/)
+-   **Database**: [MongoDB](https://www.mongodb.com/) (Mongoose)
+-   **Vector Database**: [Qdrant](https://qdrant.tech/)
+-   **Queue System**: [BullMQ](https://docs.bullmq.io/) with [Redis](https://redis.io/) (for file processing)
+-   **AI Framework**: [LangChain](https://js.langchain.com/)
 
-- Node.js
+### **AI & Models**
+-   **Chat LLM**: **Gemma 2 27B** (via [A4F](https://a4f.co/))
+-   **Vision Model**: **Qwen 2.5 VL** (via HuggingFace Inference)
+-   **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2`
+-   **Query Rewriter**: **Gemma 2 27B**
+-   **Translation**: [LibreTranslate](https://libretranslate.com/)
 
-- Express.js
+---
 
-- MongoDB (Mongoose)
+## 🐳 Running the Project
 
-- LangChain
+### Prerequisites
+-   [Docker & Docker Compose](https://www.docker.com/)
+-   [Node.js](https://nodejs.org/) (v18+)
+-   [pnpm](https://pnpm.io/) (recommended) or npm
 
-- BullMQ + Redis
+### 1. Start Infrastructure Services
+Start Qdrant (Vector DB) and Redis (Queue/Cache):
+```bash
+docker-compose up -d
+```
 
-**AI & Search**
+### 2. Backend Setup
+Navigate to the server directory and install dependencies:
+```bash
+cd server
+pnpm install
+```
 
-- HuggingFace all-MiniLM-L6-v2 embeddings
+Start the background worker (handles PDF processing):
+```bash
+pnpm dev:worker
+```
 
-- Gemini 2.0 Flash (OpenAI-compatible API via A4F)
+Start the API server:
+```bash
+pnpm dev
+```
+> Server runs at: `http://localhost:8000`
 
-- Qdrant Vector Database
+### 3. Frontend Setup
+Navigate to the client directory and install dependencies:
+```bash
+cd client
+pnpm install
+pnpm run dev
+```
+> Frontend runs at: `http://localhost:5173`
 
-🐳**Running the Project (Recommended Setup)**
+---
 
-- **Start Infrastructure Services**
+## ⚙️ Environment Variables
 
-  Starts Qdrant and Redis:
+Create a `.env` file in the `server` directory with the following:
 
-        docker-compose up -d
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/kisanai
+QDRANT_URL=http://localhost:6333
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-- **Backend Setup**
+# AI Services
+HUGGINGFACE_API_KEY=your_hf_key
+A4F_API_KEY=your_a4f_key
+LIBRETRANSLATE_URL=http://localhost:5000
 
-        cd server
-        pnpm install
+# Auth & Admin
+JWT_SECRET=your_jwt_secret
+ADMIN_USERNAME=admin@kisan.ai
+ADMIN_PASSWORD=secure_password
+ADMIN_JWT_SECRET=your_admin_secret
+```
 
-   Start background worker
+Create a `.env` file in the `client` directory:
 
-      pnpm dev:worker
-
-   Start API server
-
-       pnpm dev
-
-
-    Backend runs at:
-👉 http://localhost:8000
-
-- **Frontend Setup**
-
-      cd client
-      npm install
-      npm run dev
-
-
-    Frontend runs at:
-👉 http://localhost:5173
-
-⚙️ **Environment Variables**
-
-- **Backend (.env)**
-
-        MONGODB_URI=mongodb://localhost:27017/kisanai
-        QDRANT_URL=http://localhost:6333
-        REDIS_HOST=localhost
-        REDIS_PORT=6379
-        HUGGINGFACE_API_KEY=your_key
-        A4F_API_KEY=your_key
-        JWT_SECRET=your_secret
-       ADMIN_USERNAME=sample@gmail.com
-       ADMIN_PASSWORD=your_password
-       ADMIN_JWT_SECRET=your_secret
-
-- **Frontend (.env)**
-  
-         VITE_API_URL=http://localhost:8000
+```env
+VITE_API_URL=http://localhost:8000
+```
