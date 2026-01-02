@@ -32,9 +32,11 @@ import {
   Sprout,
   CloudOff as CloudOffIcon,
   PanelLeftClose,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { authFetch } from "../utils/api";
+import { authFetch, API_BASE } from "../utils/api";
 import { logout, getUser } from "../utils/auth";
 import { speak, stopSpeaking } from "../utils/tts";
 
@@ -59,6 +61,10 @@ export default function Chatbot() {
   const [language, setLanguage] = useState("English");
   const [playingMessageId, setPlayingMessageId] = useState(null);
   const [userName, setUserName] = useState("User");
+  const [diseaseMode, setDiseaseMode] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     const user = getUser();
@@ -134,6 +140,7 @@ export default function Chatbot() {
           data.map((c) => ({
             id: c.id,
             title: c.title || "New Chat",
+            type: c.type || "normal",
           }))
         );
       })
@@ -155,7 +162,13 @@ export default function Chatbot() {
       return;
     }
 
-    authFetch(`/chat/history/${currentChatId}`)
+    const chat = chatHistory.find((c) => c.id === currentChatId);
+    const endpoint =
+      chat?.type === "disease" || chat?.isDisease
+        ? `/chat/disease/history/${currentChatId}`
+        : `/chat/history/${currentChatId}`;
+
+    authFetch(endpoint)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to load chat");
         return r.json();
@@ -216,7 +229,7 @@ export default function Chatbot() {
         body: JSON.stringify({ chatId: id }),
       });
 
-      setChatHistory((p) => [{ id, title: "New Chat" }, ...p]);
+      setChatHistory((p) => [{ id, title: "New Chat", type: "normal" }, ...p]);
       setChats((p) => ({
         ...p,
         [id]: [
@@ -263,24 +276,61 @@ export default function Chatbot() {
     }
   };
 
+
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Image size must be less than 10MB");
+        return;
+      }
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !selectedImage) || isLoading) return;
+
+    if (diseaseMode && !selectedImage) {
+      alert("Please upload an image for crop diagnosis.");
+      return;
+    }
 
     let chatId = currentChatId;
     const msg = input.trim();
     setInput("");
 
+    const imageToSend = selectedImage;
+    if (imageToSend) clearImage();
+
     if (!chatId) {
       chatId = Date.now().toString();
 
       try {
-        await authFetch("/chat/create", {
+        const endpoint = diseaseMode ? "/chat/disease/create" : "/chat/create";
+        await authFetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chatId }),
+          body: JSON.stringify({ chatId, title: msg || "New Diagnosis" }),
         });
 
-        setChatHistory((p) => [{ id: chatId, title: msg }, ...p]);
+
+
+        setChatHistory((p) => [{ id: chatId, title: msg || "New Diagnosis", type: diseaseMode ? "disease" : "normal" }, ...p]);
 
         skipHistoryFetchRef.current = chatId;
         setCurrentChatId(chatId);
@@ -292,7 +342,11 @@ export default function Chatbot() {
 
     setChats((p) => ({
       ...p,
-      [chatId]: [...(p[chatId] || []), { role: "user", content: msg }],
+      [chatId]: [...(p[chatId] || []), {
+        role: "user",
+        content: msg,
+        image: imageToSend ? URL.createObjectURL(imageToSend) : null
+      }],
     }));
 
     setChats((p) => ({
@@ -310,11 +364,25 @@ export default function Chatbot() {
     setIsLoading(true);
 
     try {
-      const res = await authFetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chatId, message: msg, language }),
-      });
+      let res;
+      if (diseaseMode && imageToSend) {
+        const formData = new FormData();
+        formData.append("chatId", chatId);
+        formData.append("message", msg || "Diagnose this plant");
+        formData.append("image", imageToSend);
+        formData.append("language", language);
+
+        res = await authFetch("/chat/disease-detect", {
+          method: "POST",
+          body: formData, // No Content-Type header needed for FormData
+        });
+      } else {
+        res = await authFetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chatId, message: msg, language }),
+        });
+      }
 
       if (!res.ok) {
         throw new Error("Failed to send message");
@@ -342,18 +410,38 @@ export default function Chatbot() {
               const data = JSON.parse(line.trim().slice(6));
 
               if (data.content) {
-                accumulatedContent += data.content;
-                await new Promise((resolve) => setTimeout(resolve, 10));
+                if (data.content.length > 10) {
+                  // Simulate typing for large chunks (e.g. from Crop Doctor)
+                  const chars = data.content.split("");
+                  for (const char of chars) {
+                    accumulatedContent += char;
+                    await new Promise((resolve) => setTimeout(resolve, 15));
 
-                setChats((p) => {
-                  const messages = [...(p[chatId] || [])];
-                  const lastIndex = messages.length - 1;
-                  messages[lastIndex] = {
-                    ...messages[lastIndex],
-                    content: accumulatedContent,
-                  };
-                  return { ...p, [chatId]: messages };
-                });
+                    setChats((p) => {
+                      const messages = [...(p[chatId] || [])];
+                      const lastIndex = messages.length - 1;
+                      messages[lastIndex] = {
+                        ...messages[lastIndex],
+                        content: accumulatedContent,
+                      };
+                      return { ...p, [chatId]: messages };
+                    });
+                  }
+                } else {
+                  // Standard streaming behavior
+                  accumulatedContent += data.content;
+                  await new Promise((resolve) => setTimeout(resolve, 50));
+
+                  setChats((p) => {
+                    const messages = [...(p[chatId] || [])];
+                    const lastIndex = messages.length - 1;
+                    messages[lastIndex] = {
+                      ...messages[lastIndex],
+                      content: accumulatedContent,
+                    };
+                    return { ...p, [chatId]: messages };
+                  });
+                }
               }
 
               if (data.sources) {
@@ -385,7 +473,8 @@ export default function Chatbot() {
           }
         }
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
       setChats((p) => {
         const messages = [...(p[chatId] || [])];
         const lastIndex = messages.length - 1;
@@ -796,7 +885,7 @@ export default function Chatbot() {
           >
             <Leaf className="w-6 h-6" />
             <span className="font-bold text-lg">KisanAi</span>
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${(new Date().getMonth() >= 5 && new Date().getMonth() <= 9)
+            <div className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${(new Date().getMonth() >= 5 && new Date().getMonth() <= 9)
               ? "bg-green-100 text-green-700 border-green-200"
               : (new Date().getMonth() >= 10 || new Date().getMonth() <= 2)
                 ? "bg-amber-100 text-amber-700 border-amber-200"
@@ -809,7 +898,23 @@ export default function Chatbot() {
               </span>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+            <button
+              onClick={() => {
+                setDiseaseMode(!diseaseMode);
+                setCurrentChatId(null);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-medium text-sm border
+                ${diseaseMode
+                  ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20"
+                  : darkMode
+                    ? "bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700"
+                    : "bg-white text-green-700 border-green-100 hover:bg-green-50"
+                }`}
+            >
+              <BugIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Crop Doctor</span>
+            </button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -956,6 +1061,18 @@ export default function Chatbot() {
                           '"Outfit", "Nirmala UI", "Inter", sans-serif',
                       }}
                     >
+                      {(m.image || m.imagePath) && (
+                        <div className="mb-3 rounded-xl overflow-hidden shadow-sm">
+                          <img
+                            src={m.image || (m.imagePath?.startsWith('http') ? m.imagePath : `${API_BASE}${m.imagePath}`)}
+                            alt="Uploaded content"
+                            className="max-w-full h-auto max-h-64 object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
                       <ReactMarkdown
                         components={{
                           p: ({ node, ...props }) => (
@@ -1088,6 +1205,33 @@ export default function Chatbot() {
                 </span>
               </motion.div>
             )}
+
+            <AnimatePresence>
+              {diseaseMode && imagePreview && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                  className="mb-3 relative inline-block group"
+                >
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-green-500 shadow-lg">
+                    <img
+                      src={imagePreview}
+                      alt="Selected plant"
+                      className="h-32 w-auto object-cover bg-gray-100"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <button
+                    onClick={clearImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-colors transform hover:scale-110"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className={`p-1.5 flex gap-1.5 sm:gap-2 rounded-[1.5rem] shadow-2xl transition-all border ${darkMode
               ? "bg-gray-800 border-gray-700 shadow-black/20"
               : "bg-white border-white/60 shadow-green-900/5"
@@ -1147,7 +1291,29 @@ export default function Chatbot() {
                 </AnimatePresence>
               </div>
 
+
               <div className={`w-[1px] my-2 ${darkMode ? "bg-gray-700" : "bg-gray-100"}`} />
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageSelect}
+                accept="image/jpeg,image/png,image/jpg,image/webp"
+                className="hidden"
+              />
+
+              {diseaseMode && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`px-3 py-2 text-xs sm:text-sm font-semibold transition rounded-xl flex items-center gap-1.5 ${darkMode
+                    ? "text-gray-400 hover:bg-gray-700 hover:text-gray-200"
+                    : "text-gray-500 hover:bg-green-50 hover:text-green-700"
+                    }`}
+                  title="Upload Image"
+                >
+                  <Camera className="w-5 h-5" />
+                </button>
+              )}
 
               <input
                 value={input}
@@ -1187,8 +1353,8 @@ export default function Chatbot() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSubmit}
-                  disabled={!input.trim() || isLoading}
-                  className={`p-3 rounded-xl transition-all shadow-lg font-medium flex items-center justify-center ${isLoading || !input.trim()
+                  disabled={(!input.trim() && !selectedImage) || isLoading}
+                  className={`p-3 rounded-xl transition-all shadow-lg font-medium flex items-center justify-center ${isLoading || (!input.trim() && !selectedImage)
                     ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-green-600/30 hover:shadow-green-600/40"
                     }`}

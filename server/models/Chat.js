@@ -4,6 +4,8 @@ const MessageSchema = new mongoose.Schema(
   {
     role: { type: String, enum: ["user", "assistant"], required: true },
     content: { type: String, required: true },
+    imageUrl: { type: String },
+    imageAnalysis: { type: String },
   },
   { timestamps: true }
 );
