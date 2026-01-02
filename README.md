@@ -41,18 +41,18 @@ The platform combines advanced LLMs for text-based queries with vision-language 
 
 ```mermaid
 graph TD
-    Client[Client (React + Vite)] <-->|REST API| Server[Server (Node + Express)]
+    Client["Client (React + Vite)"] <-->|REST API| Server["Server (Node + Express)"]
     
     subgraph Data Layer
-        Server <-->|Store History| Mongo[(MongoDB)]
-        Server <-->|Vector Search| Qdrant[(Qdrant Vector DB)]
-        Server <-->|Job Queue| Redis[(Redis)]
+        Server <-->|Store History| Mongo[("MongoDB")]
+        Server <-->|Vector Search| Qdrant[("Qdrant Vector DB")]
+        Server <-->|Job Queue| Redis[("Redis")]
     end
     
     subgraph AI Services
-        Server <-->|LLM & Vision| A4F[A4F / HuggingFace]
-        Server <-->|Embeddings| HF_Embed[HuggingFace Embeddings]
-        Server <-->|Translation| Libre[LibreTranslate]
+        Server <-->|LLM & Vision| A4F["A4F / HuggingFace"]
+        Server <-->|Embeddings| HF_Embed["HuggingFace Embeddings"]
+        Server <-->|Translation| Libre["LibreTranslate"]
     end
 ```
 
@@ -189,59 +189,6 @@ ADMIN_JWT_SECRET=your_admin_secret
 
 Create a `.env` file in the `client` directory:
 
-<<<<<<< HEAD
 ```env
 VITE_API_URL=http://localhost:8000
 ```
-=======
-      pnpm dev:worker
-
-   Start API server
-
-       pnpm dev
-
-
-    Backend runs at:
-👉 http://localhost:8000
-
-- **Frontend Setup**
-
-      cd client
-      npm install
-      npm run dev
-
-
-    Frontend runs at:
-👉 http://localhost:5173
-
-⚙️ **Environment Variables**
-
-- **Backend (.env)**
-
-       # API Keys
-      HUGGINGFACE_API_KEY=your_huggingface_api_key_here
-      A4F_API_KEY=your_a4f_api_key_here
-      
-      # Database URLs
-      QDRANT_URL=your_qdrant_url_here
-      MONGODB_URI=your_mongodb_uri_here
-      
-      # Secrets
-      JWT_SECRET=your_jwt_secret_here
-      ADMIN_JWT_SECRET=your_admin_jwt_secret_here
-      
-      # Redis Configuration
-      REDIS_HOST=your_redis_host_here
-      REDIS_PORT=your_redis_port_here
-      
-      # Admin Credentials
-      ADMIN_USERNAME=your_admin_email_here
-      ADMIN_PASSWORD=your_admin_password_here
-
-# Server Configuration
-PORT=8000
-
-- **Frontend (.env)**
-  
-         VITE_API_URL=http://localhost:8000
->>>>>>> d9c5a9acb0a71cf0c76d8b522978d470584d5423
