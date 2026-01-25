@@ -1,6 +1,6 @@
-# 🌾 KisanAI — Agriculture Intelligence Platform
+# 🌾 AgroSathi — Agriculture Intelligence Platform
 
-**KisanAI** is a comprehensive, open-source AI-powered agriculture assistance platform built using Retrieval-Augmented Generation (RAG). It empowers farmers with accurate, document-grounded answers to their questions about soil, crops, irrigation, pests, and farming practices.
+**AgroSathi** is a comprehensive, open-source AI-powered agriculture assistance platform built using Retrieval-Augmented Generation (RAG). It empowers farmers with accurate, document-grounded answers to their questions about soil, crops, irrigation, pests, and farming practices.
 
 The platform combines advanced LLMs for text-based queries with vision-language models for disease detection, offering a complete digital companion for modern farming.
 
@@ -96,6 +96,23 @@ sequenceDiagram
 
 ---
 
+---
+
+## 📂 Project Structure
+
+### Backend (`server/`)
+-   **`config/`**: Database, AI, and Queue configuration.
+-   **`controllers/`**: Request handling logic (`chatController`, `diseaseController`, etc.).
+-   **`routes/`**: API route definitions mapping to controllers.
+-   **`services/`**: Business logic helpers (`aiService`, `visionService`, `translationService`).
+-   **`utils/`**: Shared utilities (`response` helpers, etc.).
+
+### Frontend (`client/`)
+-   **`src/components/`**: Reusable UI components (`Sidebar`, `WeatherWidget`).
+-   **`src/pages/`**: Main application views (`Chatbot.jsx`).
+
+---
+
 ## 🏗️ Tech Stack
 
 ### **Frontend**
@@ -139,7 +156,7 @@ cd agricultural-chat-bot
 Create a `.env` file in the `server` directory:
 ```env
 # Database
-MONGODB_URI=mongodb://localhost:27017/kisanai
+MONGODB_URI=mongodb://localhost:27017/agrosathi
 QDRANT_URL=http://qdrant:6333
 REDIS_HOST=valkey
 REDIS_PORT=6379

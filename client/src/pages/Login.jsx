@@ -47,7 +47,7 @@ export default function Login() {
           <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center">
             <Leaf className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">KisanAi</h1>
+          <h1 className="text-2xl font-bold text-gray-800">AgroSathi</h1>
         </div>
 
         <h2 className="text-xl font-semibold mb-6 text-center text-gray-700">
