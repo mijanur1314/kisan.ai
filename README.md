@@ -33,7 +33,7 @@ The platform combines advanced LLMs for text-based queries with vision-language 
 ### 📰 **Agricultural News & Schemes**
 -   **RSS Feed Aggregation**: Automatically fetches and summarizes government schemes and agricultural news.
 -   **AI-Powered Summaries**: Uses LLM to generate concise, farmer-friendly summaries of complex notices.
--   **Scheduled Updates**: Background service runs every 12 hours to keep information fresh.
+-   **Scheduled Updates**: Uses `node-cron` scheduler to run every 12 hours with graceful shutdown support.
 
 ### 🔐 **Secure & Robust Architecture**
 -   **Authentication**: Secure JWT-based login for Users and Admins.
