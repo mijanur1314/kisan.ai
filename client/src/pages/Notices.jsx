@@ -48,10 +48,10 @@ export default function Notices() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 text-gray-800">
-            <header className="bg-white/40 backdrop-blur-xl border-b border-white/40 sticky top-0 z-20 p-4">
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-20 p-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link to="/" className="p-2 hover:bg-white/50 rounded-full transition-colors">
+                        <Link to="/" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                             <ArrowLeft className="w-6 h-6 text-green-700" />
                         </Link>
                         <div className="flex items-center gap-2 text-green-700">
@@ -72,8 +72,8 @@ export default function Notices() {
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
-                                        ? "bg-green-600 text-white shadow-md"
-                                        : "text-gray-600 hover:bg-green-50"
+                                    ? "bg-green-600 text-white shadow-md"
+                                    : "text-gray-600 hover:bg-green-50"
                                     }`}
                             >
                                 {f === "ALL" ? "All Updates" : f === "GOVERNMENT" ? "Schemes" : "News"}
@@ -97,8 +97,8 @@ export default function Notices() {
                             <div key={notice._id} className="bg-white rounded-2xl p-6 shadow-sm border border-green-50 hover:shadow-md transition-all flex flex-col h-full group">
                                 <div className="flex items-start justify-between mb-4">
                                     <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${notice.source_type === "GOVERNMENT"
-                                            ? "bg-blue-100 text-blue-700 border border-blue-200"
-                                            : "bg-amber-100 text-amber-700 border border-amber-200"
+                                        ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                        : "bg-amber-100 text-amber-700 border border-amber-200"
                                         }`}>
                                         {notice.source_type === "GOVERNMENT" ? "SCHEME" : "NEWS"}
                                     </span>

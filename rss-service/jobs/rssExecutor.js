@@ -1,13 +1,13 @@
 /**
  * RSS Feed Executor
- * Processes whitelisted RSS feeds, generates AI summaries, and stores notices in MongoDB
+ * Processes whitelisted RSS feeds, extracts content summaries, and stores notices in MongoDB
  * Runs every 12 hours via scheduled job in index.js
  */
 
 import crypto from "crypto";
 import Notice from "../models/Notice.js";
 import { parseFeed } from "../services/rssParser.js";
-import { summarizeText } from "../services/summaryService.js";
+
 
 // Whitelisted RSS feeds for agricultural news and government schemes
 const WHITELISTED_FEEDS = [
@@ -28,7 +28,7 @@ function generateHash(title, url) {
 
 /**
  * Main RSS processing function
- * Fetches feeds, generates summaries, and stores new notices
+ * Fetches feeds, extracts summaries, and stores new notices
  * @returns {Promise<number>} Count of newly added notices
  */
 export async function processFeeds() {
@@ -58,15 +58,12 @@ export async function processFeeds() {
 
                     console.log(`\n🤖 Processing: ${item.title}`);
 
-                    // Generate AI summary for farmer-friendly content
-                    let summary = await summarizeText(item.title, item.content);
 
-                    // Fallback to raw content if AI summary fails
-                    if (!summary || summary === "Summary unavailable." || summary.length < 10) {
-                        summary = item.content || "Click to read full details.";
-                        // Strip HTML tags and truncate
-                        summary = summary.replace(/<[^>]*>/g, '').slice(0, 300) + (summary.length > 300 ? "..." : "");
-                    }
+
+                    // Use raw content or snippet as summary
+                    let summary = item.content || "Click to read full details.";
+                    // Strip HTML tags and truncate
+                    summary = summary.replace(/<[^>]*>/g, '').slice(0, 300) + (summary.length > 300 ? "..." : "");
 
                     // Store notice in database
                     await Notice.create({
@@ -81,8 +78,8 @@ export async function processFeeds() {
 
                     newCount++;
 
-                    // Rate limiting: 1 second delay between AI requests
-                    await new Promise(r => setTimeout(r, 1000));
+                    // Rate limiting: small delay between items
+                    await new Promise(r => setTimeout(r, 100));
                 } catch (innerErr) {
                     console.error(`\n❌ Failed to process item ${item.title}:`, innerErr.message);
                 }

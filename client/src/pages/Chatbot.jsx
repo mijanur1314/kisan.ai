@@ -593,14 +593,14 @@ export default function Chatbot() {
       <main className={`flex-1 flex flex-col min-w-0 relative z-10 transition-all duration-300 ${sidebarOpen ? "lg:ml-80" : ""}`}>
         <header
           className={`${darkMode
-            ? "bg-gray-900/60 border-gray-800"
-            : "bg-white/40 border-white/40"
-            } backdrop-blur-xl border-b p-4 flex gap-3 items-center sticky top-0 z-20 transition-all`}
+            ? "bg-gray-900 border-gray-800"
+            : "bg-white border-gray-200"
+            } border-b p-4 flex gap-3 items-center sticky top-0 z-20 transition-all`}
         >
           {!sidebarOpen && (
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`${darkMode ? "hover:bg-gray-800" : "hover:bg-white/50"
+              className={`${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
                 } p-2 rounded-xl transition-colors`}
             >
               <Menu
@@ -673,8 +673,8 @@ export default function Chatbot() {
               whileTap={{ scale: 0.95 }}
               onClick={() => setDarkMode(!darkMode)}
               className={`p-2 rounded-full transition shadow-sm ${darkMode
-                ? "bg-gray-800/80 text-yellow-400 hover:bg-gray-700 border border-gray-700"
-                : "bg-white/80 text-orange-500 hover:bg-orange-50 border border-orange-100"
+                ? "bg-gray-800 text-yellow-400 hover:bg-gray-700 border border-gray-700"
+                : "bg-white text-orange-500 hover:bg-orange-50 border border-orange-100"
                 }`}
             >
               {darkMode ? (
@@ -987,9 +987,9 @@ export default function Chatbot() {
               )}
             </AnimatePresence>
 
-            <div className={`p-1.5 flex gap-1.5 sm:gap-2 rounded-[1.5rem] shadow-2xl transition-all border glass-input ${darkMode
-              ? "bg-gray-800/60 border-gray-700 shadow-black/20"
-              : "bg-white/70 border-white/60 shadow-green-900/5"
+            <div className={`p-1.5 flex gap-1.5 sm:gap-2 rounded-[1.5rem] shadow-2xl transition-all border ${darkMode
+              ? "bg-gray-800 border-gray-700 shadow-black/20"
+              : "bg-white border-gray-200 shadow-green-900/5"
               }`}>
               <div className="relative flex items-center pl-2">
                 <button
@@ -1018,7 +1018,7 @@ export default function Chatbot() {
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className={`absolute bottom-full mb-3 left-0 w-48 rounded-2xl shadow-xl overflow-hidden py-1.5 z-50 glass-card text-left ${darkMode ? "text-white" : "text-gray-800"
+                        className={`absolute bottom-full mb-3 left-0 w-48 rounded-2xl shadow-xl overflow-hidden py-1.5 z-50 text-left ${darkMode ? "bg-gray-800 text-white border border-gray-700" : "bg-white text-gray-800 border border-gray-200"
                           }`}
                       >
                         <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">

@@ -1,7 +1,7 @@
 /**
  * RSS Service - Background Worker
  * Fetches agricultural news and government schemes every 12 hours
- * Generates AI summaries and stores in MongoDB for the Notices feature
+ * Extracts content summaries and stores in MongoDB for the Notices feature
  */
 
 import dotenv from "dotenv";

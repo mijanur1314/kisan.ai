@@ -22,7 +22,7 @@ export default function Sidebar({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setSidebarOpen(false)}
-                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+                        className="fixed inset-0 bg-black/60 z-40 lg:hidden"
                     />
                 )}
             </AnimatePresence>
@@ -35,8 +35,8 @@ export default function Sidebar({
                         exit={{ x: -320, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                         className={`fixed inset-y-0 left-0 z-40 w-80 
-              ${darkMode ? "bg-gray-900/80 border-r border-gray-800" : "bg-white/60 border-r border-white/40"} 
-              backdrop-blur-xl shadow-2xl flex flex-col h-full`}
+              ${darkMode ? "bg-gray-900 border-r border-gray-800" : "bg-white border-r border-gray-200"} 
+              shadow-2xl flex flex-col h-full`}
                     >
                         <div className="p-6">
                             <div className="flex items-center gap-4 mb-8">
@@ -83,8 +83,8 @@ export default function Sidebar({
                                                 ? "bg-gray-800 shadow-lg shadow-black/10 border border-gray-700 text-white"
                                                 : "bg-white shadow-lg shadow-green-100/50 border border-green-100 text-green-700"
                                             : darkMode
-                                                ? "hover:bg-gray-800/50 text-gray-400 hover:text-gray-200"
-                                                : "hover:bg-white/50 text-gray-600 hover:text-gray-900"
+                                                ? "hover:bg-gray-800 text-gray-400 hover:text-gray-200"
+                                                : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
                                             }`}
                                     >
                                         <div className="flex gap-3 items-center truncate flex-1 min-w-0">
@@ -115,7 +115,7 @@ export default function Sidebar({
                         </div>
 
                         <div className="p-4 border-t border-gray-100/10">
-                            <div className={`p-4 rounded-2xl ${darkMode ? "bg-gray-800/50" : "bg-white/50"} flex items-center gap-3 backdrop-blur-sm shadow-sm border ${darkMode ? "border-gray-700" : "border-white/50"}`}>
+                            <div className={`p-4 rounded-2xl ${darkMode ? "bg-gray-800" : "bg-gray-50"} flex items-center gap-3 shadow-sm border ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-white font-bold shadow-md">
                                     <User className="w-5 h-5" />
                                 </div>

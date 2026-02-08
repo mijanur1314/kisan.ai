@@ -46,15 +46,15 @@ export default function NoticesWidget({ showNotices, setShowNotices, darkMode })
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={() => setShowNotices(false)}
-                    className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
                 >
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
                         onClick={(e) => e.stopPropagation()}
-                        className={`${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-white text-gray-800 border-white/50"
-                            } rounded-3xl shadow-2xl p-6 max-w-4xl w-full border backdrop-blur-xl max-h-[85vh] flex flex-col relative z-50`}
+                        className={`${darkMode ? "bg-gray-800 text-white border-gray-700" : "bg-white text-gray-800 border-gray-200"}
+                            rounded-3xl shadow-2xl p-6 max-w-4xl w-full border max-h-[85vh] flex flex-col relative z-50`}
                     >
                         <div className="flex justify-between items-center mb-6 flex-shrink-0">
                             <h3 className="text-xl font-bold flex items-center gap-2">

@@ -4,12 +4,12 @@
  * Used for RAG (Retrieval-Augmented Generation) document retrieval
  */
 
-import { HfInference } from "@huggingface/inference";
+import { InferenceClient } from "@huggingface/inference";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { QdrantVectorStore } from "@langchain/qdrant";
 
 // HuggingFace client for LLM and vision models
-export const hfClient = new HfInference(process.env.HUGGINGFACE_API_KEY);
+export const hfClient = new InferenceClient(process.env.HUGGINGFACE_API_KEY);
 
 // Embeddings model for document vectorization
 export const embeddings = new HuggingFaceInferenceEmbeddings({
