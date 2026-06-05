@@ -47,7 +47,7 @@ export default function Notices() {
             </Link>
             <div className="flex items-center gap-2 text-green-700">
               <Leaf className="w-6 h-6" />
-              <span className="font-bold text-lg">AgroSathi News</span>
+              <span className="font-bold text-lg">Kisan.AI News</span>
             </div>
           </div>
         </div>

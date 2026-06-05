@@ -5,6 +5,7 @@
 
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { QdrantVectorStore } from "@langchain/qdrant";
+import { QdrantClient } from "@qdrant/js-client-rest";
 import { HfInference } from "@huggingface/inference";
 import { GoogleGenAI } from "@google/genai";
 
@@ -21,14 +22,19 @@ const embeddings = new HuggingFaceInferenceEmbeddings({
 
 let vectorStore;
 
+const qdrantClient = new QdrantClient({
+    url: process.env.QDRANT_URL || "http://localhost:6333",
+    checkCompatibility: false,
+});
+
 try {
     vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-        url: process.env.QDRANT_URL || "http://localhost:6333",
+        client: qdrantClient,
         collectionName: "langchainjs-testing",
     });
 } catch {
     vectorStore = new QdrantVectorStore(embeddings, {
-        url: process.env.QDRANT_URL || "http://localhost:6333",
+        client: qdrantClient,
         collectionName: "langchainjs-testing",
     });
 }

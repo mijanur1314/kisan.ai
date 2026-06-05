@@ -623,7 +623,7 @@ export default function Chatbot() {
               }`}
           >
             <Leaf className="w-6 h-6" />
-            <span className="font-bold text-lg">AgroSathi</span>
+            <span className="font-bold text-lg">Kisan.AI</span>
             <div className={`hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${(new Date().getMonth() >= 5 && new Date().getMonth() <= 9)
               ? "bg-green-100 text-green-700 border-green-200"
               : (new Date().getMonth() >= 10 || new Date().getMonth() <= 2)
@@ -709,7 +709,7 @@ export default function Chatbot() {
                   className={`text-4xl font-bold ${darkMode ? "text-white" : "text-gray-900"
                     } mb-4 tracking-tight`}
                 >
-                  Welcome to <span className="text-green-500">AgroSathi</span>
+                  Welcome to <span className="text-green-500">Kisan.AI</span>
                 </h2>
                 <p
                   className={`text-lg ${darkMode ? "text-gray-400" : "text-gray-600"

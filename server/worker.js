@@ -5,6 +5,7 @@ import fs from "fs";
 import { Worker } from "bullmq";
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { QdrantVectorStore } from "@langchain/qdrant";
+import { QdrantClient } from "@qdrant/js-client-rest";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
@@ -18,15 +19,20 @@ const embeddings = new HuggingFaceInferenceEmbeddings({
   model: "sentence-transformers/all-MiniLM-L6-v2",
 });
 
+const qdrantClient = new QdrantClient({
+  url: process.env.QDRANT_URL || "http://localhost:6333",
+  checkCompatibility: false,
+});
+
 let vectorStore;
 try {
   vectorStore = await QdrantVectorStore.fromExistingCollection(embeddings, {
-    url: process.env.QDRANT_URL || "http://localhost:6333",
+    client: qdrantClient,
     collectionName: "langchainjs-testing",
   });
 } catch {
   vectorStore = new QdrantVectorStore(embeddings, {
-    url: process.env.QDRANT_URL || "http://localhost:6333",
+    client: qdrantClient,
     collectionName: "langchainjs-testing",
   });
 }

@@ -44,7 +44,7 @@ export default function Sidebar({
                                     <Leaf className="w-7 h-7" />
                                 </div>
                                 <div>
-                                    <h1 className={`font-bold text-2xl tracking-tight ${darkMode ? "text-green-500" : "text-green-600"}`}>AgroSathi</h1>
+                                    <h1 className={`font-bold text-2xl tracking-tight ${darkMode ? "text-green-500" : "text-green-600"}`}>Kisan.AI</h1>
                                     <p className={`text-xs font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Agriculture Assistant</p>
                                 </div>
                                 <button
