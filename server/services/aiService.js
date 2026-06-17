@@ -29,10 +29,10 @@ Rewrite it as a complete standalone question.
 `;
 
     const res = await hfClient.chatCompletion({
-        model: "meta-llama/Meta-Llama-3.1-8B-Instruct",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0,
-        max_tokens: 80,
+      model: "Qwen/Qwen2.5-72B-Instruct",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0,
+      max_tokens: 80,
     });
 
     return res.choices[0].message.content.trim();
