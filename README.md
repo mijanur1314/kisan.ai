@@ -1,6 +1,6 @@
-# 🌾 AgroSathi — Agriculture Intelligence Platform
+# 🌾 Kisan.AI — Agriculture Intelligence Platform
 
-**AgroSathi** is a comprehensive, open-source AI-powered agriculture assistance platform built using Retrieval-Augmented Generation (RAG). It empowers farmers with accurate, document-grounded answers to their questions about soil, crops, irrigation, pests, and farming practices.
+**Kisan.AI** is a comprehensive, open-source AI-powered agriculture assistance platform built using Retrieval-Augmented Generation (RAG). It empowers farmers with accurate, document-grounded answers to their questions about soil, crops, irrigation, pests, and farming practices.
 
 The platform combines advanced LLMs for text-based queries with vision-language models for disease detection, offering a complete digital companion for modern farming.
 
